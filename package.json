@@ -1,0 +1,26 @@
+{
+  "name": "stylesheetjs",
+  "version": "0.1.0",
+  "description": "script to generate css from js objects",
+  "main": "stylesheet.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/axel669/StylesheetJS.git"
+  },
+  "keywords": [
+    "css",
+    "stylesheet"
+  ],
+  "author": "Axel",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/axel669/StylesheetJS/issues"
+  },
+  "homepage": "https://github.com/axel669/StylesheetJS#readme",
+  "devDependencies": {
+    "babel-preset-es2015": "^6.24.1"
+  }
+}
