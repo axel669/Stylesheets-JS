@@ -1,11 +1,11 @@
-console.log(ssjs);
-
 const sheet = ssjs.create();
 
+sheet.attrs['data-title'] = 'test';
 sheet.addStyles({
     "html, body": {
         padding: 0,
-        margin: 0
+        margin: 0,
+        backgroundColor: 'cyan'
     },
     '@keyframes': {
         from: {
@@ -16,11 +16,18 @@ sheet.addStyles({
         }
     },
     'flex-group': {
-        display: ['-webkit-flex', 'flex']
+        display: ['-webkit-flex', 'flex'],
+        userSelect: 'none'
     }
 });
 
-console.log(
-    sheet.stuff
-);
-console.log(sheet.renderText(true));
+// console.log(
+//     JSON.stringify(
+//         sheet.stuff,
+//         null,
+//         '  '
+//     )
+// );
+// console.log(sheet.renderText(true));
+// console.log(sheet.renderText());
+sheet.attach();

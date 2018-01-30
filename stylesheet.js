@@ -1,19 +1,21 @@
 "use strict";
 
+var _typeof2 = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 (function () {
     var cssNoMeasurement = new Set(["animationIterationCount", "boxFlex", "boxFlexGroup", "boxOrdinalGroup", "columnCount", "fillOpacity", "flex", "flexGrow", "flexPositive", "flexShrink", "flexNegative", "flexOrder", "fontWeight", "lineClamp", "lineHeight", "opacity", "order", "orphans", "stopOpacity", "strokeDashoffset", "strokeOpacity", "strokeWidth", "tabSize", "widows", "zIndex", "zoom"]);
-    var cssPrefixNames = new Set(['transform', 'transformOrigin', 'boxShadow', 'transition', 'animation', 'animationDelay', 'animationDirection', 'animationDuration', 'animationFillMode', 'animationIterationCount', 'animationName', 'animationPlayState', 'animationTimingFunction', 'userSelect', 'justifyContent', 'alignItems', 'flexWrap']);
+    var cssPrefixNames = new Set(['userSelect']);
     var cssPrefixes = ['-webkit-', '-moz-', '-ms-', '-o-', ''];
-    var cssValueString = function cssValueString(item) {
-        var key = item[0];
-        var value = item[1];
+    var cssValueString = function cssValueString(key, value) {
+        // const key = item[0];
+        // let value = item[1];
         if (_typeof(value) === 'function') {
             value = value();
         }
         if (_typeof(value) === 'number' && cssNoMeasurement.has(key) === false) {
             value = value + "px";
         }
-        return [key, value];
+        return value;
     };
 
     var _typeof = new Function('obj', 'return typeof obj');
@@ -23,76 +25,148 @@
 
             if (_typeof(value) === 'object' && Array.isArray(value) == false) {
                 value = arrayify(value, false);
+                return { key: key, value: value };
             }
 
-            return [key, value];
+            return { name: key, value: value };
         });
     };
-    var renderTextIndented = function renderTextIndented(value) {
+    var renderTextIndented = function renderTextIndented(item) {
         var indent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
         var tabs = '  '.repeat(indent);
         var lines = [];
 
-        var key = value[0];
-        var val = value[1];
-        var lineVals = Array.isArray(value) === true ? value : [value];
+        var key = item.key;
+        var name = item.name;
+        var value = item.value;
 
-        // lines.push(`${tabs}${key} {`);
-        // lines.push(tabs + "}");
+        if (key !== undefined) {
+            lines.push("" + tabs + key + " {");
+            value.forEach(function (val) {
+                return lines = lines.concat(renderTextIndented(val, indent + 1));
+            });
+            lines.push(tabs + "}");
+        } else {
+            var displayName = name.replace(/[A-Z]/g, function (s) {
+                return "-" + s.toLowerCase();
+            });
+            if (Array.isArray(value) === true) {
+                value.forEach(function (val) {
+                    return lines.push("" + tabs + displayName + ": " + cssValueString(name, val) + ";");
+                });
+            } else {
+                var cssVal = cssValueString(name, value);
+                if (cssPrefixNames.has(name) === true) {
+                    cssPrefixes.forEach(function (prefix) {
+                        return lines.push("" + tabs + prefix + displayName + ": " + cssVal + ";");
+                    });
+                } else {
+                    lines.push("" + tabs + displayName + ": " + cssVal + ";");
+                }
+            }
+        }
 
-        // values.forEach(
-        //     valueInfo => {
-        //         const key = valueInfo[0];
-        //         const value = valueInfo[1];
-        //         lines.push(`${tabs}${key} {`);
-        //
-        //         let lineVals = (Array.isArray(value) === true) ? value : [value];
-        //
-        //         lineVals.forEach(val => {
-        //             if (Array.isArray(val[1]) === true && Array.isArray(val[1][0]) === true) {
-        //                 lines = lines.concat(renderTextIndented(val[0], indent + 1));
-        //             }
-        //             else {
-        //                 const cssVal = cssValueString(val);
-        //                 lines.push(`${tabs}  ${cssVal[0]}: ${cssVal[1]};`);
-        //             }
-        //         });
-        //
-        //         lines.push(tabs + "}");
-        //     }
-        // );
+        return lines.join('\n');
+    };
+    var renderText = function renderText(item) {
+        var lines = [];
 
-        return lines;
+        var key = item.key;
+        var name = item.name;
+        var value = item.value;
+
+        if (key !== undefined) {
+            lines.push(key + "{");
+            value.forEach(function (val) {
+                return lines = lines.concat(renderText(val));
+            });
+            lines.push("}");
+        } else {
+            var displayName = name.replace(/[A-Z]/g, function (s) {
+                return "-" + s.toLowerCase();
+            });
+            if (Array.isArray(value) === true) {
+                value.forEach(function (val) {
+                    return lines.push(displayName + ":" + cssValueString(name, val) + ";");
+                });
+            } else {
+                var cssVal = cssValueString(name, value);
+                if (cssPrefixNames.has(name) === true) {
+                    cssPrefixes.forEach(function (prefix) {
+                        return lines.push("" + prefix + displayName + ": " + cssVal + ";");
+                    });
+                } else {
+                    lines.push(displayName + ": " + cssVal + ";");
+                }
+            }
+        }
+
+        return lines.join('');
     };
 
     var Sheet = function Sheet() {
         var stuff = [];
+        var elem = null;
+        var attr = {};
+
+        var renderTextCall = function renderTextCall() {
+            var useIndent = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+
+            if (useIndent === true) {
+                return stuff.map(function (thing) {
+                    return renderTextIndented(thing);
+                }).join('\n');
+            }
+            return stuff.map(renderText).join('');
+        };
+
         return {
             addStyles: function addStyles(styles) {
                 stuff = stuff.concat(arrayify(styles));
             },
-            renderText: function renderText() {
-                var useIndent = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-                if (useIndent === true) {
-                    return renderTextIndented(stuff).join('\n');
-                }
-                return null;
-            },
+            renderText: renderTextCall,
             attach: function attach() {
                 var head = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+                if (elem !== null) {
+                    return;
+                }
+
+                if (head === null) {
+                    head = document.head;
+                }
+
+                elem = document.createElement("style");
+                Object.keys(attr).forEach(function (name) {
+                    return elem.setAttribute(name, attr[name]);
+                });
+                elem.innerHTML = renderTextCall(true);
+                head.appendChild(elem);
+            },
+            remove: function remove() {
+                if (elem === null) {
+                    return;
+                }
+
+                elem.parentNode.removeChild(elem);
+                elem = null;
             },
 
-            //testing
-            get stuff() {
-                return stuff;
+            get attrs() {
+                return attr;
             }
         };
     };
 
     if (typeof window !== 'undefined') {
         window.ssjs = {
+            create: Sheet
+        };
+    }
+    if ((typeof module === "undefined" ? "undefined" : _typeof2(module)) !== undefined) {
+        module.exports = {
             create: Sheet
         };
     }
