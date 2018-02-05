@@ -32,8 +32,6 @@
     ]);
     const cssPrefixes = ['-webkit-', '-moz-', '-ms-', '-o-', ''];
     const cssValueString = (key, value) => {
-        // const key = item[0];
-        // let value = item[1];
         if (_typeof(value) === 'function') {
             value = value();
         }
@@ -185,7 +183,7 @@
             create: Sheet
         };
     }
-    if (typeof module !== undefined) {
+    if (typeof module !== 'undefined') {
         module.exports = {
             create: Sheet
         };

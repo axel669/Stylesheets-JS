@@ -1,14 +1,10 @@
 "use strict";
 
-var _typeof2 = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 (function () {
     var cssNoMeasurement = new Set(["animationIterationCount", "boxFlex", "boxFlexGroup", "boxOrdinalGroup", "columnCount", "fillOpacity", "flex", "flexGrow", "flexPositive", "flexShrink", "flexNegative", "flexOrder", "fontWeight", "lineClamp", "lineHeight", "opacity", "order", "orphans", "stopOpacity", "strokeDashoffset", "strokeOpacity", "strokeWidth", "tabSize", "widows", "zIndex", "zoom"]);
     var cssPrefixNames = new Set(['userSelect']);
     var cssPrefixes = ['-webkit-', '-moz-', '-ms-', '-o-', ''];
     var cssValueString = function cssValueString(key, value) {
-        // const key = item[0];
-        // let value = item[1];
         if (_typeof(value) === 'function') {
             value = value();
         }
@@ -165,7 +161,7 @@ var _typeof2 = typeof Symbol === "function" && typeof Symbol.iterator === "symbo
             create: Sheet
         };
     }
-    if ((typeof module === "undefined" ? "undefined" : _typeof2(module)) !== undefined) {
+    if (typeof module !== 'undefined') {
         module.exports = {
             create: Sheet
         };
