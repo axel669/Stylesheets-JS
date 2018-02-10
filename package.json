@@ -1,5 +1,5 @@
 {
-  "name": "stylesheets-js",
+  "name": "ssjs",
   "version": "0.1.0",
   "description": "script to generate css from js objects",
   "main": "index.js",
