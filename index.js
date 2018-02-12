@@ -156,13 +156,12 @@
         };
     };
 
-    if (typeof window !== 'undefined') {
-        window.ssjs = {
-            create: Sheet
-        };
-    }
     if (typeof module !== 'undefined') {
         module.exports = {
+            create: Sheet
+        };
+    } else {
+        window.ssjs = {
             create: Sheet
         };
     }

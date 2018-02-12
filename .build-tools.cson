@@ -4,9 +4,34 @@ providers: [
     config:
       commands: [
         {
-          project: "C:\\Users\\Axel\\Documents\\programming\\github\\StylesheetJS"
-          source: "C:\\Users\\Axel\\Documents\\programming\\github\\StylesheetJS\\.build-tools.cson"
+          project: "C:\\Users\\Axel\\Documents\\programming\\github\\SSJS"
+          source: "C:\\Users\\Axel\\Documents\\programming\\github\\SSJS\\.build-tools.cson"
           name: "Build"
+          command: "npm run prep-release"
+          wd: "."
+          env: {}
+          modifier:
+            save_all: {}
+          environment:
+            name: "child_process"
+            config:
+              stdoe: "both"
+          stdout:
+            pipeline: []
+          stderr:
+            pipeline: []
+          output:
+            console:
+              close_success: true
+              queue_in_buffer: true
+              colors: false
+              stdin: false
+          version: 2
+        }
+        {
+          project: "C:\\Users\\Axel\\Documents\\programming\\github\\SSJS"
+          source: "C:\\Users\\Axel\\Documents\\programming\\github\\SSJS\\.build-tools.cson"
+          name: "Release"
           command: "npm run prep-release"
           wd: "."
           env: {}

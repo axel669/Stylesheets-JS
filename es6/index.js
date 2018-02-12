@@ -178,13 +178,13 @@
         };
     };
 
-    if (typeof window !== 'undefined') {
-        window.ssjs = {
+    if (typeof module !== 'undefined') {
+        module.exports = {
             create: Sheet
         };
     }
-    if (typeof module !== 'undefined') {
-        module.exports = {
+    else {
+        window.ssjs = {
             create: Sheet
         };
     }
