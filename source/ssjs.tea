@@ -1,0 +1,69 @@
+let cssNoMeasurement = [
+    "animationIterationCount"
+    "boxFlex"
+    "boxFlexGroup"
+    "boxOrdinalGroup"
+    "columnCount"
+    "fillOpacity"
+    "flex"
+    "flexGrow"
+    "flexPositive"
+    "flexShrink"
+    "flexNegative"
+    "flexOrder"
+    "fontWeight"
+    "lineClamp"
+    "lineHeight"
+    "opacity"
+    "order"
+    "orphans"
+    "stopOpacity"
+    "strokeDashoffset"
+    "strokeOpacity"
+    "strokeWidth"
+    "tabSize"
+    "widows"
+    "zIndex"
+    "zoom"
+]
+let cssPrefixNames = Set*(["userSelect"])
+let cssPrefixes = ["-webkit-", "-moz-", "-ms-", "-o-", ""]
+
+let cssValueString = (key, value) => {
+    let type = typeof value
+    if type == "function" {
+        return value()
+    }
+    if type == "number" && cssNoMeasurement.has(key) == false {
+        return "${value}px"
+    }
+    return value
+}
+let arrayify = (obj) => Object.keys(obj)
+    .map((key) => {
+        let mut value = obj[key]
+
+        if typeof value == "object" && Array.isArray(value) == false {
+            value = arrayify(value)
+            return {key, value}
+        }
+
+        return {name: key, value}
+    })
+
+let keyRegex = /A-Z/g
+let renderText = (cssItem) => {
+    let parts = []
+
+    let {key, name, value} = cssItem
+
+    if key != undefined {
+        parts.push("${key}{"
+        for val in value {
+            parts.push(...renderText(val))
+        }
+        parts.push("}")
+    }
+    else {
+    }
+}
