@@ -1,14 +1,11 @@
 {
   "name": "ssjs",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "script to generate css from js objects",
-  "main": "index.js",
+  "main": "ss.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "babel source\\stylesheet.es6.js -o index.js",
-    "copy": "copy source\\stylesheet.es6.js es6\\index.js",
-    "minify": "uglifyjs index.js -o min\\index.js",
-    "prep-release": "run-s build copy minify"
+    "build": "rollup -c"
   },
   "repository": {
     "type": "git",
@@ -25,9 +22,7 @@
   },
   "homepage": "https://github.com/axel669/StylesheetJS#readme",
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-preset-env": "^1.6.1",
-    "npm-run-all": "^4.1.2",
-    "uglify-js": "^3.3.9"
+    "@axel669/teascript": "^0.12.0",
+    "rollup": "^0.68.1"
   }
 }
