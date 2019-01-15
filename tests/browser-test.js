@@ -1,11 +1,11 @@
-const sheet = ssjs.create();
+const sheet = SSJS.create();
 
-sheet.attrs['data-title'] = 'test';
+sheet.attr['data-title'] = 'test';
 sheet.addStyles({
     "html, body": {
         padding: 0,
         margin: 0,
-        backgroundColor: 'cyan'
+        backgroundColor: () => theme.test
     },
     '@keyframes': {
         from: {
@@ -21,13 +21,12 @@ sheet.addStyles({
     }
 });
 
-// console.log(
-//     JSON.stringify(
-//         sheet.stuff,
-//         null,
-//         '  '
-//     )
-// );
-// console.log(sheet.renderText(true));
-// console.log(sheet.renderText());
+const theme = {
+    test: "teal"
+};
+
 sheet.attach();
+
+console.log(sheet.render());
+theme.test = "cyan";
+console.log(sheet.render("min"));
