@@ -26,132 +26,93 @@ let cssNoMeasurement = Set*([
     "zIndex"
     "zoom"
 ])
+let cssPrefixed = Set*([
+    "userSelect"
+])
 let cssPrefixes = ["-webkit-", "-moz-", "-ms-", "-o-", ""]
-let prefixMap = ["userSelect"].reduce(
-    (prefixes, name) => {
-        ...prefixes
-        [name]: cssPrefixes
-    }
-    {}
-)
-
-let cssValueString = (key, value) => {
+let processValue = (key, value) => {
     let type = typeof value
-    if type == "function" {
-        return value()
+    if type == "string" {
+        return value
     }
     if type == "number" && cssNoMeasurement.has(key) == false {
         return "${value}px"
     }
+    if Array.isArray(value) == true {
+        return value.map((val) => cssValue(key, val))
+    }
     return value
 }
-let arrayify = (obj) => Object.keys(obj)
-    .map((key) => {
-        let mut value = obj[key]
-
-        if typeof value == "object" && Array.isArray(value) == false {
-            value = arrayify(value)
-            return {key, value}
-        }
-
-        return {name: key, value}
-    })
-
-let renderText = (cssItem, options) => {
-    let tab = options.tab.repeat(options.indent)
+let genParts = (css, theme, parent = "", depth = -1) => {
     let parts = []
-    let {split} = options
-
-    let {key, name, value} = cssItem
-
-    if key != void {
-        parts.push("${tab}${key}${split}{")
-        for val in value {
-            parts.push(
-                renderText(
-                    val
-                    {...options, indent: options.indent + 1}
+    let tabs = "    ".repeat(Math.max(0, depth))
+    let innerTabs = "    ".repeat(depth + 1)
+    let attachments = []
+    if parent != "" {
+        parts.push("${tabs}${parent} {")
+    }
+    for key, value of css {
+        switch {
+            case key.indexOf("&") != -1 {
+                attachments.push(
+                    genParts(value, theme, key.replace(/&/g, parent), depth)
                 )
-            )
-        }
-        parts.push("${tab}}")
-    }
-    else {
-        let displayName = name.replace(
-            /[A-Z]/g
-            (match) => "-${match.toLowerCase()}"
-        )
-
-        if Array.isArray(value) == true {
-            for valueItem in value {
-                let cssValue = cssValueString(name, valueItem)
-                parts.push("${tab}${displayName}:${split}${cssValue};")
+            }
+            case typeof value == "object" && Array.isArray(value) == false {
+                parts.push(
+                    genParts(value, theme, key, depth + 1)
+                )
+            }
+            default {
+                let keyStr = key.replace(
+                    /[A-Z]/g
+                    (letter) => "-${letter.toLowerCase()}"
+                )
+                let rawValue = typeof value == "function"
+                    ? value(theme)
+                    : value
+                let cssValue = processValue(key, rawValue)
+                switch {
+                    case cssPrefixed.has(key) == true {
+                        for prefix in cssPrefixes {
+                            parts.push("${innerTabs}${prefix}${keyStr}: ${cssValue};")
+                        }
+                    }
+                    case Array.isArray(cssValue) == true {
+                        for value in cssValue {
+                            parts.push("${innerTabs}${keyStr}: ${value};")
+                        }
+                    }
+                    default {
+                        parts.push("${innerTabs}${keyStr}: ${cssValue};")
+                    }
+                }
             }
         }
-        else {
-            let cssValue = cssValueString(name, value)
-            let prefixes = prefixMap[name] ?? [""]
-
-            for prefix in prefixes {
-                parts.push("${tab}${prefix}${displayName}:${split}${cssValue};")
-            }
-        }
     }
-
-    return parts.join(options.join)
+    if parent != "" {
+        parts.push("${tabs}}")
+    }
+    parts.push(...attachments)
+    return parts.join("\n")
 }
-renderText.min = (items) => items.map(
-    (item) => renderText(
-        item
-        {
-            split: ""
-            join: ""
-            tab: ""
-            indent: 0
-        }
-    )
-).join("")
-renderText.normal = (items, tab = "    ") => items.map(
-    (item) => renderText(
-        item
-        {
-            split: " "
-            join: "\n"
-            tab
-            indent: 0
-        }
-    )
-).join("\n")
 
 construct Sheet {
-    new() => {
-        #element = null
-        #entries = []
-        #attributes = {}
-    }
+    new(css, attr) => {
+        #css = css
+        #elem = document.createElement("style")
 
-    get attr() => #attributes
-
-    addStyles(styles) => {
-        #entries.push(...arrayify(styles))
-    }
-
-    attach(renderStyle = "normal") => {
-        if #element != null {
-            return
+        let attributes = attr ?? {}
+        for key, value of attributes {
+            #elem.setAttribute(key, value)
         }
 
-        #element = document.createElement("style")
-        for name, attrValue of #attributes {
-            #element.setAttribute(name, attrValue)
-        }
-        #element.innerHTML = renderText[renderStyle](#entries)
-        document.head.appendChild(#element)
+        document.querySelector("head").appendChild(#elem)
     }
 
-    render(renderStyle = "normal") => renderText[renderStyle](#entries)
+    generate(theme) => {
+        #elem.innerHTML = genParts(#css, theme)
+    }
 }
 
-export default {
-    create: Sheet
-}
+export default Sheet

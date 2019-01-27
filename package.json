@@ -1,6 +1,6 @@
 {
   "name": "ssjs",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "script to generate css from js objects",
   "main": "ss.js",
   "scripts": {

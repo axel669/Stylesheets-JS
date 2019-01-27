@@ -4,7 +4,18 @@
         <meta name="viewport" content="initial-scale=1, user-scalable=0, width=device-width, height=device-height" />
     </head>
     <body>
-        <script src="../browser/ss.js"></script>
-        <script src="browser-test.js"></script>
+        <script src="../standalone/ss.js"></script>
+        <script>
+        const sheet = SSJS({
+            "html, body": {
+                backgroundColor: (theme) => theme.bgColor,
+                padding: 0,
+                margin: 0
+            }
+        });
+        sheet.generate({
+            bgColor: "cyan"
+        });
+        </script>
     </body>
 </html>

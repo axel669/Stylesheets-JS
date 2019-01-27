@@ -1,5 +1,6 @@
 'use strict';
 
+var nullref0, ref0;
 const cssNoMeasurement = new Set([
     "animationIterationCount",
     "boxFlex",
@@ -28,136 +29,85 @@ const cssNoMeasurement = new Set([
     "zIndex",
     "zoom"
 ]);
+const cssPrefixed = new Set(["userSelect"]);
 const cssPrefixes = ["-webkit-", "-moz-", "-ms-", "-o-", ``];
-const prefixMap = ["userSelect"].reduce(
-    (prefixes, name) => ({
-        ...prefixes,
-        [name]: cssPrefixes
-    }),
-    {}
-);
-const cssValueString = (key, value) => {
+const processValue = (key, value) => {
     const type = typeof value;
-    if (type === "function") {
-        return value();
+    if (type === "string") {
+        return value;
     }
     if (type === "number" && cssNoMeasurement.has(key) === false) {
         return `${value}px`;
     }
+    if (Array.isArray(value) === true) {
+        return value.map((val) => cssValue(key, val));
+    }
     return value;
 };
-const arrayify = (obj) =>
-    Object.keys(obj).map((key) => {
-        let value = obj[key];
-        if (typeof value === "object" && Array.isArray(value) === false) {
-            value = arrayify(value);
-            return {
-                key: key,
-                value: value
-            };
-        }
-        return {
-            name: key,
-            value: value
-        };
-    });
-const renderText = (cssItem, options) => {
-    var nullref0;
+const genParts = (css, theme, parent = ``, depth = -1) => {
+    var ref0;
 
-    const tab = options.tab.repeat(options.indent);
     const parts = [];
-    const { split } = options;
-    const { key, name, value } = cssItem;
-    if (key !== undefined) {
-        parts.push(`${tab}${key}${split}{`);
-        for (const val of value) {
-            parts.push(
-                renderText(val, {
-                    ...options,
-                    indent: options.indent + 1
-                })
-            );
-        }
-        parts.push(`${tab}}`);
-    } else {
-        const displayName = name.replace(
-            /[A-Z]/g,
-            (match) => `-${match.toLowerCase()}`
-        );
-        if (Array.isArray(value) === true) {
-            for (const valueItem of value) {
-                const cssValue = cssValueString(name, valueItem);
-                parts.push(`${tab}${displayName}:${split}${cssValue};`);
-            }
-        } else {
-            const cssValue = cssValueString(name, value);
-            const prefixes =
-                (nullref0 = prefixMap[name]) != null ? nullref0 : [``];
-            for (const prefix of prefixes) {
-                parts.push(
-                    `${tab}${prefix}${displayName}:${split}${cssValue};`
+    const tabs = "    ".repeat(Math.max(0, depth));
+    const innerTabs = "    ".repeat(depth + 1);
+    const attachments = [];
+    if (parent !== ``) {
+        parts.push(`${tabs}${parent} {`);
+    }
+    for (const key of Object.keys((ref0 = css))) {
+        const value = ref0[key];
+        switch (true) {
+            case key.indexOf("&") !== -1:
+                attachments.push(
+                    genParts(value, theme, key.replace(/&/g, parent), depth)
                 );
+                break;
+            case typeof value === "object" && Array.isArray(value) === false:
+                parts.push(genParts(value, theme, key, depth + 1));
+                break;
+            default: {
+                const keyStr = key.replace(
+                    /[A-Z]/g,
+                    (letter) => `-${letter.toLowerCase()}`
+                );
+                const rawValue =
+                    typeof value === "function" ? value(theme) : value;
+                const cssValue = processValue(key, rawValue);
+                switch (true) {
+                    case cssPrefixed.has(key) === true:
+                        for (const prefix of cssPrefixes) {
+                            parts.push(
+                                `${innerTabs}${prefix}${keyStr}: ${cssValue};`
+                            );
+                        }
+                        break;
+                    case Array.isArray(cssValue) === true:
+                        for (const value of cssValue) {
+                            parts.push(`${innerTabs}${keyStr}: ${value};`);
+                        }
+                        break;
+                    default:
+                        parts.push(`${innerTabs}${keyStr}: ${cssValue};`);
+                }
             }
         }
     }
-    return parts.join(options.join);
+    if (parent !== ``) {
+        parts.push(`${tabs}}`);
+    }
+    parts.push(...attachments);
+    return parts.join("\n");
 };
-renderText.min = (items) =>
-    items
-        .map((item) =>
-            renderText(item, {
-                split: ``,
-                join: ``,
-                tab: ``,
-                indent: 0
-            })
-        )
-        .join(``);
-renderText.normal = (items, tab = "    ") =>
-    items
-        .map((item) =>
-            renderText(item, {
-                split: " ",
-                join: "\n",
-                tab: tab,
-                indent: 0
-            })
-        )
-        .join("\n");
 const Sheet = (() => {
-    const construct = function construct() {
+    const construct = function construct(css, attr) {
         const self = {};
         const publicAPI = {};
         Object.defineProperties(publicAPI, {
-            addStyles: {
+            generate: {
                 configurable: false,
-                get: () => (styles) => {
-                    self.entries.push(...arrayify(styles));
+                get: () => (theme) => {
+                    self.elem.innerHTML = genParts(self.css, theme);
                 }
-            },
-            attach: {
-                configurable: false,
-                get: () => (renderStyle = "normal") => {
-                    var ref0;
-
-                    if (self.element !== null) {
-                        return;
-                    }
-                    self.element = document.createElement("style");
-                    for (const name of Object.keys((ref0 = self.attributes))) {
-                        const attrValue = ref0[name];
-                        self.element.setAttribute(name, attrValue);
-                    }
-                    self.element.innerHTML = renderText[renderStyle](
-                        self.entries
-                    );
-                    document.head.appendChild(self.element);
-                }
-            },
-            render: {
-                configurable: false,
-                get: () => (renderStyle = "normal") =>
-                    renderText[renderStyle](self.entries)
             }
         });
         Object.defineProperties(self, {});
@@ -165,21 +115,18 @@ const Sheet = (() => {
             self,
             Object.getOwnPropertyDescriptors(publicAPI)
         );
-        Object.defineProperties(publicAPI, {
-            attr: {
-                configurable: false,
-                get: () => self.attributes
-            }
-        });
-        self.element = null;
-        self.entries = [];
-        self.attributes = {};
+        Object.defineProperties(publicAPI, {});
+        self.css = css;
+        self.elem = document.createElement("style");
+        const attributes = (nullref0 = attr) != null ? nullref0 : {};
+        for (const key of Object.keys((ref0 = attributes))) {
+            const value = ref0[key];
+            self.elem.setAttribute(key, value);
+        }
+        document.querySelector("head").appendChild(self.elem);
         return publicAPI;
     };
     return (...args) => construct.apply({}, args);
 })();
-var ssjs = {
-    create: Sheet
-};
 
-module.exports = ssjs;
+module.exports = Sheet;

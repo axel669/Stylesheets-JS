@@ -4,7 +4,7 @@ export default {
     input: "src/ssjs.tea",
     output: [
         {
-            file: "browser/ss.js",
+            file: "standalone/ss.js",
             format: "iife",
             name: "SSJS"
         },
