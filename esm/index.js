@@ -118,7 +118,6 @@ const prepObj = (obj, parent = "", current = [], top = []) => {
     return top;
 };
 const lerp = (from, to, by) => from + ((to - from) * by);
-const sum = values => values.reduce((total, n) => total + n, 0);
 const sumsq = values => values.reduce((total, n) => total + (n ** 2), 0);
 const blendValues = values => Math.sqrt(sumsq(values) / values.length);
 const color = (r, g, b, a = 1) => ({

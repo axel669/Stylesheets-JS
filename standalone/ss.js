@@ -1,135 +1,210 @@
-var SSJS = (function () {
+var ssjs = (function () {
     'use strict';
 
-    var nullref0, ref0;
     const cssNoMeasurement = new Set([
-        "animationIterationCount",
-        "boxFlex",
-        "boxFlexGroup",
-        "boxOrdinalGroup",
-        "columnCount",
-        "fillOpacity",
+        "animation-iteration-count",
+        "box-flex",
+        "box-flex-group",
+        "box-ordinal-group",
+        "column-count",
+        "fill-opacity",
         "flex",
-        "flexGrow",
-        "flexPositive",
-        "flexShrink",
-        "flexNegative",
-        "flexOrder",
-        "fontWeight",
-        "lineClamp",
-        "lineHeight",
+        "flex-grow",
+        "flex-positive",
+        "flex-shrink",
+        "flex-negative",
+        "flex-order",
+        "font-weight",
+        "line-clamp",
+        "line-height",
         "opacity",
         "order",
         "orphans",
-        "stopOpacity",
-        "strokeDashoffset",
-        "strokeOpacity",
-        "strokeWidth",
-        "tabSize",
+        "stop-opacity",
+        "stroke-dashoffset",
+        "stroke-opacity",
+        "stroke-width",
+        "tab-size",
         "widows",
-        "zIndex",
+        "z-index",
         "zoom"
     ]);
-    const cssPrefixed = new Set(["userSelect"]);
-    const cssPrefixes = ["-webkit-", "-moz-", "-ms-", "-o-", ``];
-    const processValue = (key, value) => {
-        const type = typeof value;
-        if (type === "string") {
-            return value;
-        }
-        if (type === "number" && cssNoMeasurement.has(key) === false) {
-            return `${value}px`;
-        }
-        if (Array.isArray(value) === true) {
-            return value.map((val) => cssValue(key, val));
-        }
-        return value;
-    };
-    const genParts = (css, theme, parent = ``, depth = -1) => {
-        var ref0;
+    const cssPrefixes = ["-webkit-", "-moz-", "-ms-", "-o-", ""];
+    const prefixMap = ["user-select"].reduce(
+        (prefixes, name) => ({
+            ...prefixes,
+            [name]: cssPrefixes
+        }),
+        {}
+    );
+
+    const renderCSS = ([selector, valueBase], tab, depth, theme) => {
+        const tabString = tab.repeat(depth);
 
         const parts = [];
-        const tabs = "    ".repeat(Math.max(0, depth));
-        const innerTabs = "    ".repeat(depth + 1);
-        const attachments = [];
-        if (parent !== ``) {
-            parts.push(`${tabs}${parent} {`);
+
+        if (Array.isArray(valueBase) === true) {
+            parts.push(`${tabString}${selector} {`);
+            parts.push(...valueBase.map(
+                value => renderCSS(value, tab, depth + 1, theme)
+            ));
+            parts.push(`${tabString}}`);
         }
-        for (const key of Object.keys((ref0 = css))) {
-            const value = ref0[key];
-            switch (true) {
-                case key.indexOf("&") !== -1:
-                    attachments.push(
-                        genParts(value, theme, key.replace(/&/g, parent), depth)
-                    );
-                    break;
-                case typeof value === "object" && Array.isArray(value) === false:
-                    parts.push(genParts(value, theme, key, depth + 1));
-                    break;
-                default: {
-                    const keyStr = key.replace(
-                        /[A-Z]/g,
-                        (letter) => `-${letter.toLowerCase()}`
-                    );
-                    const rawValue =
-                        typeof value === "function" ? value(theme) : value;
-                    const cssValue = processValue(key, rawValue);
-                    switch (true) {
-                        case cssPrefixed.has(key) === true:
-                            for (const prefix of cssPrefixes) {
-                                parts.push(
-                                    `${innerTabs}${prefix}${keyStr}: ${cssValue};`
-                                );
-                            }
-                            break;
-                        case Array.isArray(cssValue) === true:
-                            for (const value of cssValue) {
-                                parts.push(`${innerTabs}${keyStr}: ${value};`);
-                            }
-                            break;
-                        default:
-                            parts.push(`${innerTabs}${keyStr}: ${cssValue};`);
+        else {
+            const value = getCSSValue(valueBase, selector, theme);
+            const name = getCSSName(selector);
+            if (value !== null) {
+                const selectors = getPrefixedSelector(name);
+                for (const _name of selectors) {
+                    for (const _value of value) {
+                        parts.push(`${tabString}${_name}: ${_value};`);
                     }
                 }
             }
         }
-        if (parent !== ``) {
-            parts.push(`${tabs}}`);
-        }
-        parts.push(...attachments);
+
         return parts.join("\n");
     };
-    const Sheet = (() => {
-        const construct = function construct(css, attr) {
-            const self = {};
-            const publicAPI = {};
-            Object.defineProperties(publicAPI, {
-                generate: {
-                    configurable: false,
-                    get: () => (theme) => {
-                        self.elem.innerHTML = genParts(self.css, theme);
-                    }
-                }
-            });
-            Object.defineProperties(self, {});
-            Object.defineProperties(
-                self,
-                Object.getOwnPropertyDescriptors(publicAPI)
-            );
-            Object.defineProperties(publicAPI, {});
-            self.css = css;
-            self.elem = document.createElement("style");
-            const attributes = (nullref0 = attr) != null ? nullref0 : {};
-            for (const key of Object.keys((ref0 = attributes))) {
-                const value = ref0[key];
-                self.elem.setAttribute(key, value);
-            }
-            document.querySelector("head").appendChild(self.elem);
-            return publicAPI;
-        };
-        return (...args) => construct.apply({}, args);
-    })();
+    const getPrefixedSelector = selector => (prefixMap[selector] || [""])
+        .map(prefix => `${prefix}${selector}`);
+    const getCSSName = name => name.replace(
+        /[A-Z]/g,
+        (s) => `-${s.toLowerCase()}`
+    );
+    const getCSSValue = (value, name, theme) => {
+        if (value === null || value === undefined) {
+            return null;
+        }
 
-    return Sheet;
+        if (typeof value === "function") {
+            return getCSSValue(value(theme), name, theme);
+        }
+
+        if (Array.isArray(value) === true) {
+            return value.map(
+                val => getCSSValue(val, name, theme)
+            );
+        }
+
+        if (value.toCSS !== undefined) {
+            return [value.toCSS()];
+        }
+
+        if (typeof value === "number" && cssNoMeasurement.has(name) === false) {
+            return [`${value}px`];
+        }
+
+        return [value];
+    };
+
+    const prepObj = (obj, parent = "", current = [], top = []) => {
+        for (const [selectorBase, value] of Object.entries(obj)) {
+            const selector = selectorBase.replace(/&/g, parent);
+
+            if (parent === "" || selectorBase.indexOf("&") !== -1) {
+                const items = [];
+                top.push([selector, items]);
+                prepObj(value, selector, items, top);
+            }
+            else {
+                if (typeof value === "object" && value.toCSS === undefined) {
+                    const items = [];
+                    current.push([selector, items]);
+                    prepObj(value, selector, items, top);
+                }
+                else {
+                    current.push([selector, value]);
+                }
+            }
+        }
+
+        return top;
+    };
+    const lerp = (from, to, by) => from + ((to - from) * by);
+    const sumsq = values => values.reduce((total, n) => total + (n ** 2), 0);
+    const blendValues = values => Math.sqrt(sumsq(values) / values.length);
+    const color = (r, g, b, a = 1) => ({
+        get r() {return r},
+        get g() {return g},
+        get b() {return b},
+        get a() {return a},
+        opacity: alpha => color(r, g, b, alpha),
+        invert: () => color(255 - r, 255 - g, 255 - b, a),
+        darken: factor => color(
+            lerp(r, 0, factor)|0,
+            lerp(g, 0, factor)|0,
+            lerp(b, 0, factor)|0,
+            a
+        ),
+        lighten: factor => color(
+            lerp(r, 255, factor)|0,
+            lerp(g, 255, factor)|0,
+            lerp(b, 255, factor)|0,
+            a
+        ),
+        toCSS: () => `rgba(${r}, ${g}, ${b}, ${a})`
+    });
+    color.fromHex = hex => {
+        if (hex.startsWith("#") === true) {
+            hex = hex.slice(1);
+        }
+        const [r, g, b, a] = (hex.length <= 4)
+            ? [
+                parseInt(hex.slice(0, 1).repeat(2), 16),
+                parseInt(hex.slice(1, 2).repeat(2), 16),
+                parseInt(hex.slice(2, 3).repeat(2), 16),
+                parseInt(hex.slice(3, 4).repeat(2) || "FF", 16) / 255,
+            ]
+            : [
+                parseInt(hex.slice(0, 2), 16),
+                parseInt(hex.slice(2, 4), 16),
+                parseInt(hex.slice(4, 6), 16),
+                parseInt(hex.slice(6, 8) || "FF", 16) / 255,
+            ];
+
+        return color(r, g, b, a);
+    };
+    color.blend = (...colors) => color(
+        blendValues(colors.map(c => c.r))|0,
+        blendValues(colors.map(c => c.g))|0,
+        blendValues(colors.map(c => c.b))|0,
+        blendValues(colors.map(c => c.a))
+    );
+
+    const initUpdate = (attrs) => {
+        if (typeof window !== "undefined") {
+            const element = document.createElement("style");
+
+            for (const [attr, value] of Object.entries(attrs)) {
+                element.setAttribute(attr, value);
+            }
+
+            document.querySelector("head").appendChild(element);
+
+            return css => {
+                element.innerHTML = css;
+                return css;
+            };
+        }
+
+        return css => css;
+    };
+    const sheet = (styles, attrs = {}) => {
+        const cssSource = prepObj(styles);
+
+        const update = initUpdate(attrs);
+
+        return {
+            generate: (theme, tab = "    ") => update(
+                cssSource
+                    .map(decl => renderCSS(decl, tab, 0, theme))
+                    .join("\n")
+            )
+        };
+    };
+
+    sheet.color = color;
+
+    return sheet;
 
 }());

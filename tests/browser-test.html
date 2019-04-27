@@ -6,16 +6,37 @@
     <body>
         <script src="../standalone/ss.js"></script>
         <script>
-        const sheet = SSJS({
-            "html, body": {
-                backgroundColor: (theme) => theme.bgColor,
-                padding: 0,
-                margin: 0
-            }
-        });
+        const sheet = ssjs(
+            {
+                "html, body": {
+                    padding: 0,
+                    margin: 0
+                },
+                "div": {
+                    width: 200,
+                    height: 200
+                },
+                "[data-a]": {
+                    backgroundColor: theme => theme.first
+                },
+                "[data-c]": {
+                    backgroundColor: theme => theme.second
+                },
+                "[data-b]": {
+                    backgroundColor: theme => theme.first.lighten(0.5)
+                }
+            },
+            {name: "test-thing"}
+        );
         sheet.generate({
-            bgColor: "cyan"
+            bgColor: ssjs.color.fromHex("0FF").opacity(0.5),
+            first: ssjs.color(255, 0, 0),
+            second: ssjs.color(0, 255, 0),
+            third: ssjs.color(0, 0, 255)
         });
         </script>
+        <div data-a></div>
+        <div data-b></div>
+        <div data-c></div>
     </body>
 </html>

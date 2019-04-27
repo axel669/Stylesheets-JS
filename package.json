@@ -1,8 +1,8 @@
 {
   "name": "ssjs",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "script to generate css from js objects",
-  "main": "ss.js",
+  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rollup -c"
@@ -22,7 +22,11 @@
   },
   "homepage": "https://github.com/axel669/StylesheetJS#readme",
   "devDependencies": {
-    "@axel669/teascript": "^0.12.0",
     "rollup": "^0.68.1"
-  }
+  },
+  "files": [
+    "index.js",
+    "/esm",
+    "/standalone"
+  ]
 }

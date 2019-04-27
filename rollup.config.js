@@ -1,25 +1,18 @@
-import tea from "@axel669/teascript/rollup";
-
 export default {
-    input: "src/ssjs.tea",
+    input: "src/ss.js",
     output: [
         {
             file: "standalone/ss.js",
             format: "iife",
-            name: "SSJS"
+            name: "ssjs"
         },
         {
-            file: "ss.js",
+            file: "index.js",
             format: "cjs"
         },
         {
-            file: "es6/ss.js",
+            file: "esm/index.js",
             format: "esm"
         }
-    ],
-    plugins: [
-        tea({
-            include: ["src/**.tea"]
-        })
     ]
 };
