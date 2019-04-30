@@ -50,8 +50,8 @@ const renderCSS = ([selector, valueBase], tab, depth, theme) => {
         parts.push(`${tabString}}`);
     }
     else {
-        const value = getCSSValue(valueBase, selector, theme);
         const name = getCSSName(selector);
+        const value = getCSSValue(valueBase, name, theme);
         if (value !== null) {
             const selectors = getPrefixedSelector(name);
             for (const _name of selectors) {
