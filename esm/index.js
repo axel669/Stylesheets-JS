@@ -24,13 +24,13 @@ const cssNoMeasurement = new Set([
     "tab-size",
     "widows",
     "z-index",
-    "zoom"
+    "zoom",
 ]);
 const cssPrefixes = ["-webkit-", "-moz-", "-ms-", "-o-", ""];
 const prefixMap = ["user-select"].reduce(
     (prefixes, name) => ({
         ...prefixes,
-        [name]: cssPrefixes
+        [name]: cssPrefixes,
     }),
     {}
 );
@@ -48,50 +48,54 @@ const renderCSS = ([selector, valueBase], tab, depth, theme) => {
         parts.push(`${tabString}}`);
     }
     else {
-        const name = getCSSName(selector);
-        const value = getCSSValue(valueBase, name, theme);
+        const name = cssifyName(selector);
+        const value = resolveCSSValue(valueBase, name, theme);
         if (value !== null) {
-            const selectors = getPrefixedSelector(name);
+            const selectors = prefixSelector(name);
             for (const _name of selectors) {
                 for (const _value of value) {
-                    parts.push(`${tabString}${_name}: ${_value};`);
+                    parts.push(`${tabString}${_name}: ${_value}`);
                 }
             }
         }
     }
 
-    return parts.join("\n");
+    return parts.join("\n")
 };
-const getPrefixedSelector = selector => (prefixMap[selector] || [""])
+const prefixSelector = selector => (prefixMap[selector] || [""])
     .map(prefix => `${prefix}${selector}`);
-const getCSSName = name => name.replace(
+const cssifyName = name => name.replace(
     /[A-Z]/g,
     (s) => `-${s.toLowerCase()}`
 );
-const getCSSValue = (value, name, theme) => {
+const resolveCSSValue = (value, name, theme) => {
     if (value === null || value === undefined) {
-        return null;
+        return null
     }
 
     if (typeof value === "function") {
-        return getCSSValue(value(theme), name, theme);
+        return resolveCSSValue(
+            value(theme),
+            name,
+            theme
+        )
     }
 
     if (Array.isArray(value) === true) {
         return value.map(
-            val => getCSSValue(val, name, theme)
-        );
+            val => resolveCSSValue(val, name, theme)
+        )
     }
 
     if (value.toCSS !== undefined) {
-        return [value.toCSS()];
+        return [value.toCSS()]
     }
 
     if (typeof value === "number" && cssNoMeasurement.has(name) === false) {
-        return [`${value}px`];
+        return [`${value}px`]
     }
 
-    return [value];
+    return [value]
 };
 
 const prepObj = (obj, parent = "", current = [], top = []) => {
@@ -115,18 +119,34 @@ const prepObj = (obj, parent = "", current = [], top = []) => {
         }
     }
 
-    return top;
+    return top
 };
-const lerp = (from, to, by) => from + ((to - from) * by);
-const sumsq = values => values.reduce((total, n) => total + (n ** 2), 0);
-const blendValues = values => Math.sqrt(sumsq(values) / values.length);
+const lerp = (from, to, by) => (
+    from
+    + (
+        (to - from)
+        * by
+    )
+);
+const sumsq = values => values.reduce(
+    (total, n) => total + (n ** 2),
+    0
+);
+const blendValues = values => Math.sqrt(
+    sumsq(values) / values.length
+);
 const color = (r, g, b, a = 1) => ({
     get r() {return r},
     get g() {return g},
     get b() {return b},
     get a() {return a},
-    opacity: alpha => color(r, g, b, alpha),
-    invert: () => color(255 - r, 255 - g, 255 - b, a),
+    opacity: newAlpha => color(r, g, b, newAlpha),
+    invert: () => color(
+        255 - r,
+        255 - g,
+        255 - b,
+        a
+    ),
     darken: factor => color(
         lerp(r, 0, factor)|0,
         lerp(g, 0, factor)|0,
@@ -159,16 +179,24 @@ color.fromHex = hex => {
             parseInt(hex.slice(6, 8) || "FF", 16) / 255,
         ];
 
-    return color(r, g, b, a);
+    return color(r, g, b, a)
 };
 color.blend = (...colors) => color(
-    blendValues(colors.map(c => c.r))|0,
-    blendValues(colors.map(c => c.g))|0,
-    blendValues(colors.map(c => c.b))|0,
-    blendValues(colors.map(c => c.a))
+    blendValues(
+        colors.map(c => c.r)
+    )|0,
+    blendValues(
+        colors.map(c => c.g)
+    )|0,
+    blendValues(
+        colors.map(c => c.b)
+    )|0,
+    blendValues(
+        colors.map(c => c.a)
+    )
 );
 
-const initUpdate = (attrs) => {
+const useElement = (attrs) => {
     if (typeof window !== "undefined") {
         const element = document.createElement("style");
 
@@ -180,26 +208,50 @@ const initUpdate = (attrs) => {
 
         return css => {
             element.innerHTML = css;
-            return css;
-        };
+            return css
+        }
     }
 
-    return css => css;
+    return css => css
 };
 const sheet = (styles, attrs = {}) => {
     const cssSource = prepObj(styles);
 
-    const update = initUpdate(attrs);
+    const updateCSS = useElement(attrs);
 
     return {
-        generate: (theme, tab = "    ") => update(
+        generate: (theme, tab = " ".repeat(4)) => updateCSS(
             cssSource
                 .map(decl => renderCSS(decl, tab, 0, theme))
                 .join("\n")
         )
-    };
+    }
+};
+
+const createGroup = (groupName) => {
+    const sheets = {};
+
+    return {
+        add: (name, styles, attrs = {}) => {
+            const newAttrs = {
+                ...attrs,
+                "data-group-name": groupName,
+                "data-group-item-name": name,
+            };
+            sheets[name] = sheet(styles, newAttrs);
+        },
+        remove: (name) => {
+            delete sheets[name];
+        },
+        generate: (theme) => {
+            for (const sheet of Object.values(sheets)) {
+                sheet.generate(theme);
+            }
+        },
+    }
 };
 
 sheet.color = color;
+sheet.createGroup = createGroup;
 
 export default sheet;
