@@ -6,34 +6,53 @@
     <body>
         <script src="../standalone/ss.js"></script>
         <script>
-        const sheet = ssjs(
+        const elements = ssjs.createGroup("group")
+        elements.add(
+            "core",
             {
                 "html, body": {
                     padding: 0,
-                    margin: 0
+                    margin: 0,
                 },
                 "div": {
                     width: 200,
-                    height: 200
+                    height: 200,
                 },
+            }
+        )
+        elements.add(
+            "a",
+            {
                 "[data-a]": {
-                    backgroundColor: theme => theme.first
+                    backgroundColor: theme => theme.first,
+                    "&:hover": {
+                        backgroundColor: theme => theme.first.lighten(0.3),
+                    }
                 },
+            }
+        )
+        elements.add(
+            "c",
+            {
                 "[data-c]": {
-                    backgroundColor: theme => theme.second
+                    backgroundColor: theme => theme.second,
                 },
+            }
+        )
+        elements.add(
+            "b",
+            {
                 "[data-b]": {
-                    backgroundColor: theme => theme.first.lighten(0.5)
+                    backgroundColor: theme => theme.first.lighten(0.5),
                 }
-            },
-            {name: "test-thing"}
-        );
-        sheet.generate({
+            }
+        )
+        elements.generate({
             bgColor: ssjs.color.fromHex("0FF").opacity(0.5),
             first: ssjs.color(255, 0, 0),
             second: ssjs.color(0, 255, 0),
             third: ssjs.color(0, 0, 255)
-        });
+        })
         </script>
         <div data-a></div>
         <div data-b></div>

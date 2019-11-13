@@ -56,7 +56,7 @@ const renderCSS = ([selector, valueBase], tab, depth, theme) => {
             const selectors = prefixSelector(name);
             for (const _name of selectors) {
                 for (const _value of value) {
-                    parts.push(`${tabString}${_name}: ${_value}`);
+                    parts.push(`${tabString}${_name}: ${_value};`);
                 }
             }
         }
